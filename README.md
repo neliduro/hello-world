@@ -2,420 +2,274 @@
 Hello!!!
 
 
+#Prework2
+# -*- coding: utf-8 -*-
 """
-A.Match_ends
-"""
+Created on Tue Mar 29 15:37:28 2016
 
-def match_ends(words):
-    i=0
-    sortie=0
-    while i <len(words):
-        ti=len(words[i])
-        if len(words[i])>=2 and words[i][0] ==words[i][ti-1]:
-            sortie=sortie+1
+@author: n.duro
+"""
+########################
+#   import data        #
+########################
+import numpy as np
+import pandas as pd
+df = pd.read_csv('C:/Documents/n.duro/Desktop/Kaggle/train.csv', header=0)
+
+########################
+# Descriptive Analysis #
+########################
+print df.describe()
+
+
+#global
+x=len(df[(df['Survived'] == 1)])
+y=len(df)
+tx_surv= 1.0 * x / y
+print tx_surv
+
+#par pclass
+def surv(var, taille):
+    surv=[]
+    for i in range(1,taille+1):
+        surv.append(len(df[ (df['Survived'] == 1) & (df[var] == i) ]))
+    return surv
+
+
+def dead(var, taille):
+    dead=[]
+    for i in range(1,taille+1):
+        dead.append(len(df[ (df['Survived'] == 0) & (df[var] == i) ]))
+    return dead
+
+
+def pclass():
+    survivors=surv('Pclass', 3)
+    deads=dead('Pclass', 3)
+    taux_surv = np.zeros((3,2))
+    #return survivors, deads, taux_surv
+    for j in range(0,3):
         
-    
-        i=i+1
-    #print sortie
-    return sortie
-    
-    
-words=["tata", "toto", "a", "ata", "pap"]
-match_ends(words)
+        taux_surv[j][0]=j+1
+        taux_surv[j][1]= 1.0*survivors[j]/(survivors[j]+deads[j])
+      
+    #print "taux de survie classe 1: %s ; tx surv classe 2: %s ; tx surv classe 3: %s"    %(taux_surv[0][2], taux_surv[1][2], taux_surv[2][2])
+
+    return taux_surv
+pclass()
+
+#Par Embarked
+Qs=(len(df[ (df['Survived'] == 1) & (df["Embarked"] == "Q") ]))
+Qd=(len(df[ (df['Survived'] == 0) & (df["Embarked"] == "Q") ]))    
+ 
+tx_Q= 1.0*Qs/(Qs+Qd)
+
+Cs=(len(df[ (df['Survived'] == 1) & (df["Embarked"] == "C") ]))
+Cd=(len(df[ (df['Survived'] == 0) & (df["Embarked"] == "C") ]))
+
+tx_C= 1.0*Cs/(Cs+Cd)
+
+Ss=(len(df[ (df['Survived'] == 1) & (df["Embarked"] == "S") ]))
+Sd=(len(df[ (df['Survived'] == 0) & (df["Embarked"] == "S") ]))
+
+tx_S= 1.0*Ss/(Ss+Sd)
 
 
-words=["tata", "toto", "a", "ata", "pap", "papappaap"]
-match_ends(words)
-    
-"""
-B.Front_x
-"""
+print "taux de Q: %s ; taux de C: %s ; taux de S: %s" %(tx_Q, tx_C, tx_S)
 
-def front_x(words):
+#taux de Q: 0.38961038961 ; taux de C: 0.553571428571 ; taux de S: 0.336956521739
+
+
+
+
+#histogramme
+
+df["Age"].hist()
+
+df.boxplot("Age")
+
+
+############################
+# Variables change         #
+############################
+#rename variables
+def renamegen(df):
+    df['Gender'] = df['Sex'].map( {'female': 0, 'male': 1} ).astype(int)
+
+renamegen(df)
+
+
+# delete variables not used
+
+df = df.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1) 
+
+
+
+#Missing value
+def checkmiss(df):
+    print 'Age Missing Value %s' %len(df[df['Age'].isnull()][['Pclass', 'Age']])
+    print 'Pclass Missing Value %s' %len(df[df['Pclass'].isnull()][['Pclass']])
+    print 'SibSp Missing Value %s' %len(df[df['SibSp'].isnull()][['Pclass', 'Age']])
+    print 'Parch Missing Value %s' %len(df[df['Parch'].isnull()][[ 'Pclass', 'Age']])
+    print 'Fare Missing Value %s' %len(df[df['Fare'].isnull()][[ 'Pclass', 'Age']])
+    print 'Embarked Missing Value %s' %len(df[df['Fare'].isnull()][[ 'Pclass', 'Age']])
+
+checkmiss(df)
+print 'Survived Missing Value %s' %len(df[df['Survived'].isnull()][['Survived', 'Pclass', 'Age']])
+    
+# missing value on Age (177)
+def agenan(df):
+    median_ages = np.zeros((2,3))
+    median_ages
+    for i in range(0, 2):
+        for j in range(0, 3):
+            median_ages[i,j] = df[(df['Gender'] == i) & \
+                                  (df['Pclass'] == j+1)]['Age'].dropna().median()
+ 
+    median_ages
+
+    for i in range(0, 2):
+        for j in range(0, 3):
+            df.loc[ (df.Age.isnull()) & (df.Gender == i) & (df.Pclass == j+1),\
+                    'Age'] = median_ages[i,j]
+
+agenan(df)
+
+checkmiss(df)
+
+df = df.dropna()
+
+df['EmbarkedP'] = df['Embarked'].map( {'C': 1, 'Q': 2, 'S': 3} ).astype(int)
+df = df.drop(['Embarked'], axis=1) 
+def cross(df):
+    df['FamilySize'] = df['SibSp'] + df['Parch']
+    df['Age*Class'] = df.Age * df.Pclass
+    return df
+cross(df)
+
+
+#############################
+# Sample                    #
+#############################
+number = len(df)
+
+size=int(0.3*number)
+
+from sklearn.cross_validation import train_test_split
+
+train_data, test_data=train_test_split(df, test_size=size)
+
+#check taux de survie
+x_train=len(train_data[(train_data['Survived'] == 1)])
+y_train=len(train_data)
+tx_surv_train= 1.0 * x_train / y_train
+
+x_test=len(test_data[(test_data['Survived'] == 1)])
+y_test=len(test_data)
+tx_surv_test= 1.0 * x_test / y_test
+
+
+print tx_surv        #0.383838383838
+print tx_surv_train  #0.380417335474
+print tx_surv_test   #0.387218045113
+
+data=df.as_matrix(columns=None)
+train=train_data.as_matrix(columns=None)
+test=test_data.as_matrix(columns=None)
+
+
+#############################
+# Models                    #
+#############################
+#random forest
+# Import the random forest package
+from sklearn.ensemble import RandomForestClassifier 
+
+# Create the random forest object which will include all the parameters
+# for the fit
+forest = RandomForestClassifier(n_estimators = 100)
+
+# Fit the training data to the Survived labels and create the decision trees
+forest = forest.fit(train[0::,1::],train[0::,0])
+
+# Take the same decision trees and run it on the test data
+output = forest.predict(test[0::,1::])
+
+
+real=test[0::,0]
+
+def verif(output):
     i=0
-    sortie=[]
-    fin=[]
-    ex=[]
-    while i <len(words):
-        if words[i][0]=="x":
-            ex.append(words[i])
-        else:
-            fin.append(words[i])
+    j=0
+    while i <len(real):
+        if real[i]== output[i]:
+            j=j+1
         i=i+1
-    i=0
-    while i <len(ex):
-        t=i+1  
-        sortie.append(ex[i])
-        while t<len(ex):
-            if sortie[i]>ex[t]:
-                temp=sortie[i]
-                sortie[i]=ex[t]
-                ex[t]=temp
-            t=t+1
-        i=i+1
-    i=0        
-    while i <len(fin):
-        t=i+1   
-        sortie.append(fin[i])
-        while t<len(fin):
-            if sortie[len(ex)+i]>fin[t]:
-                temp=sortie[len(ex)+i]
-                sortie[len(ex)+i]=fin[t]
-                fin[t]=temp
-            t=t+1
-
-        i=i+1
-    #print sortie
-    return sortie
-words=["tata", "toto", "a", "ata", "xu","pap", "xoo", "xaaa", "xeeeee"]
-front_x(words)
+    tx_rep=1.0*j/len(real)
+    return tx_rep
+verif(output)
 
 
-"""
-C sort_last
-"""
-def sort_last(tuples):
-    i=0
-    sortie=[]
-    while i<len(tuples):
-        t=i+1
-        sortie.append(tuples[i])
-        while t<len(tuples):
-            if sortie[i][-1]>tuples[t][-1]:
-                temp=sortie[i]
-                sortie[i]=tuples[t]
-                tuples[t]=temp
-            t=t+1
+#accuracy
+a_rf=forest.score(test[0::,1::], real, sample_weight=None)
+#a_rf=tx_rep
 
-        i=i+1
-    #print sortie
-    return sortie
-    
-tuples=[(1, 7), (1, 3), (3, 4, 5), (2, 2)]
-sort_last(tuples)
+#logistic regression
+# Import the random forest package
+from sklearn import linear_model
 
-def test(got, expected):
-    if got == expected:
-        prefix = ' OK '
-    else:
-        prefix = '  X '
-    print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
-    
-def main():
-    print 'match_ends'
-    test(match_ends(['aba', 'xyz', 'aa', 'x', 'bbb']), 3)
-    test(match_ends(['', 'x', 'xy', 'xyx', 'xx']), 2)
-    test(match_ends(['aaa', 'be', 'abc', 'hello']), 1)
+logreg = linear_model.LogisticRegression(C=1e5)
 
-    print
-    print 'front_x'
-    test(front_x(['bbb', 'ccc', 'axx', 'xzz', 'xaa']),
-        ['xaa', 'xzz', 'axx', 'bbb', 'ccc'])
-    test(front_x(['ccc', 'bbb', 'aaa', 'xcc', 'xaa']),
-        ['xaa', 'xcc', 'aaa', 'bbb', 'ccc'])
-    test(front_x(['mix', 'xyz', 'apple', 'xanadu', 'aardvark']),
-        ['xanadu', 'xyz', 'aardvark', 'apple', 'mix'])
-        
-main()
+# we create an instance of Neighbours Classifier and fit the data.
+reg=logreg.fit(train[0::,1::],train[0::,0])
+
+# Take the same decision trees and run it on the test data
+output_reg = logreg.predict(test[0::,1::])
 
 
-"""
-D. remove_adjacent
-"""
-def remove_adjacent(nums):
-    sortie=[]
-    i=1
-    if len(nums)>1:
-        sortie.append(nums[0])
-        while i<len(nums):
-            if nums[i-1] !=nums[i]:
-                sortie.append(nums[i])
-            i=i+1
-        print sortie
-    else:
-        sortie=nums
-        #print nums
-    return sortie
-    
-nums= [1, 2, 2, 3]
-remove_adjacent(nums)
+real=test[0::,0]
+
+#accuracy
+a_log=logreg.score(test[0::,1::], real, sample_weight=None)
 
 
-"""""""""""""""
-E. linear_merge
-"""""""""""""""
-def linear_merge(list1, list2):
-    out=list1+list2
-    sortie=[]
-    i=0
-    while i <len(out):
-        t=i+1  
-        sortie.append(out[i])
-        while t<len(out):
-            if sortie[i]>out[t]:
-                temp=sortie[i]
-                sortie[i]=out[t]
-                out[t]=temp
-            t=t+1
-        i=i+1
-    #print sortie
-    return sortie
-    
-list1= [1, 2, 3]
-list2=[2,3,5]
-linear_merge(list1, list2)
-
-
-
-
-def test(got, expected):
-    if got == expected:
-        prefix = ' OK '
-    else:
-        prefix = '  X '
-    print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
-    return
-    
-def main():
-    print 'remove_adjacent'
-    test(remove_adjacent([1, 2, 2, 3]), [1, 2, 3])
-    test(remove_adjacent([2, 2, 3, 3, 3]), [2, 3])
-    test(remove_adjacent([]), [])
-
-    print
-    print 'linear_merge'
-    test(linear_merge(['aa', 'xx', 'zz'], ['bb', 'cc']),
-        ['aa', 'bb', 'cc', 'xx', 'zz'])
-    test(linear_merge(['aa', 'xx'], ['bb', 'cc', 'zz']),
-        ['aa', 'bb', 'cc', 'xx', 'zz'])
-    test(linear_merge(['aa', 'aa'], ['aa', 'bb', 'bb']),
-        ['aa', 'aa', 'aa', 'bb', 'bb'])
-    return
-        
-main()
-    
-    
-
-    
-"""
-A. donuts
-"""
-
-def donuts(count):
-    if count<10: 
-        return 'Number of donuts: %s' % (repr(count))
-    else:
-        return 'Number of donuts: many'
-    
-    
-donuts(5)
-donuts(11)
-
-
-"""
-B. both_ends
-"""
-
-def both_ends(s):
-    if len(s)<=2:
-        return ''
-    else: 
-        return s[0]+s[1]+s[-2]+s[-1]       
-    
-
-both_ends('valable')
-both_ends('ok')
-
-
-
-"""
-C. fix_start
-"""
-def fix_start(s):
-    temp=s[0]
-    tempo=s[1:len(s)]
-    sort=tempo.replace(temp, '*')
-    sortie=s[0]+sort
-    #print sortie
-    return sortie
-
-fix_start('babble')
-
-
-
-"""
-D. MixUp
-"""
-
-def mix_up(a, b):
-    atemp=a.replace(a[0], b[0])
-    atemp=atemp.replace(a[1], b[1])
-    btemp=b.replace(b[0], a[0])
-    btemp=btemp.replace(b[1], a[1])
-    sortie=atemp+' '+btemp
-    #print sortie    
-    
-    return sortie
-    
-mix_up('dog', 'dinner')
-mix_up('mix', 'pod')
-
-
-
-def test(got, expected):
-    if got == expected:
-        prefix = ' OK '
-    else:
-        prefix = '  X '
-    print '%s got: %s expected: %s' % (prefix, repr(got), repr(expected))
-    return
-
-
-def main():
-    print 'donuts'
-    # Each line calls donuts, compares its result to the expected for that call.
-    test(donuts(4), 'Number of donuts: 4')
-    test(donuts(9), 'Number of donuts: 9')
-    test(donuts(10), 'Number of donuts: many')
-    test(donuts(99), 'Number of donuts: many')
-
-    print
-    print 'both_ends'
-    test(both_ends('spring'), 'spng')
-    test(both_ends('Hello'), 'Helo')
-    test(both_ends('a'), '')
-    test(both_ends('xyz'), 'xyyz')
-
-  
-    print
-    print 'fix_start'
-    test(fix_start('babble'), 'ba**le')
-    test(fix_start('aardvark'), 'a*rdv*rk')
-    test(fix_start('google'), 'goo*le')
-    test(fix_start('donut'), 'donut')
-
-    print
-    print 'mix_up'
-    test(mix_up('mix', 'pod'), 'pox mid')
-    test(mix_up('dog', 'dinner'), 'dig donner')
-    test(mix_up('gnash', 'sport'), 'spash gnort')
-    test(mix_up('pezzy', 'firm'), 'fizzy perm')
-    return
-
-
-main()
-
-
-
-"""
-D. verbing
-"""
-
-def verbing(s):
-    if len(s)<=3 :
-        return s 
-        
-    else:
-        temp=s[-3:len(s)]
-        if temp=='ing':
-            sortie=s+'ly'
-            return sortie
-        else:
-            sortie=s+'ing'
-            return sortie
-    
-    
-verbing('tapating')
-
-
-"""
-E. not_bad
-"""
-
-def not_bad(s):
-    i=0
-    t=0
-    debut=0
-    fin=0        
-    while i<len(s):
-        temp=s[i:i+3]
-        if temp=='not':
-            debut=i
-            t=t+1
-        if temp=='bad':
-            fin=i+3
-            t=t+1
-        i=i+1
-        if t==2:
-            i=len(s)        
-    if debut<fin:
-        sort=s.replace(s[debut:fin], 'good')
-        return sort
-    else: 
-        return s
-    
-    
-s='This dinner is not that bad!'
-not_bad(s)
-s='This dinner is bad and not ok!'
-not_bad(s)
-
-
-
-"""
-F. front_back
-"""
-
-def front_back(a, b):
-    l_a=len(a)
-    l_b=len(b)
-    if l_a%2==0 :
-        a_front=a[0:l_a/2]
-        a_back=a[l_a/2:l_a]
-    else:
-        a_front=a[0:l_a/2+1]
-        a_back=a[l_a/2+1:l_a]
-    if l_b%2==0 :
-        b_front=b[0:l_b/2]
-        b_back=b[l_b/2:l_b]
-    else:
-        b_front=b[0:l_b/2+1]
-        b_back=b[l_b/2+1:l_b]
-    return a_front+b_front+a_back+b_back
-    
-front_back('abcde', 'efgh')
-
-
-    
-def main():
-    print 'verbing'
-    test(verbing('hail'), 'hailing')
-    test(verbing('swiming'), 'swimingly')
-    test(verbing('do'), 'do')
-    
-    
-    print 'not_bad'
-    test(not_bad('This movie is not so bad'), 'This movie is good')
-    test(not_bad('This dinner is not that bad!'), 'This dinner is good!')
-    test(not_bad('This tea is not hot'), 'This tea is not hot')
-    test(not_bad("It's bad yet not"), "It's bad yet not")
-
-    
-    print 'front_back'
-    test(front_back('abcd', 'xy'), 'abxcdy')
-    test(front_back('abcde', 'xyz'), 'abcxydez')
-    test(front_back('Kitten', 'Donut'), 'KitDontenut')
-    return
-main()
-
-
-    
-    
-    
-    
+if a_log>=a_rf: 
+    print "Select: Logistic Regression"
+else:
+    print "Select: Random Forest"
     
 
 
 
+#test sur la base fournie
+import pandas as pd
+test_imp = pd.read_csv('C:/Documents/n.duro/Desktop/Kaggle/test.csv', header=0)
+
+test_imp.head()
 
 
+#retraitement de la donnée
+renamegen(test_imp)
+test_imp = test_imp.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1) 
+checkmiss(test_imp)
+agenan(test_imp)
+checkmiss(test_imp)
+test_imp = test_imp.dropna()
+
+
+test_imp['EmbarkedP'] = test_imp['Embarked'].map( {'C': 1, 'Q': 2, 'S': 3} ).astype(int)
+test_imp = test_imp.drop(['Embarked'], axis=1) 
+cross(test_imp)
+testons=test_imp.as_matrix(columns=None)
+
+#test model
+output_reg = forest.predict(testons[0::,0::])
+
+
+#taux de surv
+number_passengers = np.size(output_reg.astype(np.float))
+number_survived = np.sum(output_reg.astype(np.float))
+proportion_survivors = number_survived / number_passengers
+print "Proportion survivors: %s" %proportion_survivors
+
+#Proportion survivors: 0.364508393285
